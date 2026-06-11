@@ -11,6 +11,14 @@ Personal Claude Code skill plugin — Obsidian second brain workflows backed up 
 | `work-mode` | `/work-mode [project]` | Project execution session — loads progress, tracks tasks, writes checkpoints continuously |
 | `skill-search` | `/skill-search [query]` | Finds best installed skill for a need; falls back to skillsmp.com and GitHub |
 
+## Agents
+
+Agents live in the `agents/` folder and are auto-loaded by Claude Code at session start.
+
+| Agent | Model | What it does |
+|---|---|---|
+| `implementer` | Sonnet | Implements an already-agreed plan (coding/implementation work). Pinned to Sonnet so the main session can stay on a stronger model and delegate execution. |
+
 ## Setup
 
 ### 1. Set vault path
