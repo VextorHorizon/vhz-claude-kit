@@ -126,7 +126,6 @@
     "refreshInterval": 1
   },
   "enabledPlugins": {
-    "obsidian-skills@vhz-claude-skills": true,
     "superpowers@claude-plugins-official": true,
     "code-review@claude-plugins-official": true,
     "code-simplifier@claude-plugins-official": true,
@@ -169,7 +168,8 @@
     "ra-qm-skills@claude-code-skills": false,
     "statistical-analyst@claude-code-skills": false,
     "taste-skill@taste-skill": true,
-    "claude-mpm@claude-mpm-marketplace": true
+    "claude-mpm@claude-mpm-marketplace": true,
+    "obsidian-skills@vhz-claude-kit": true
   },
   "extraKnownMarketplaces": {
     "claude-code-skills": {
