@@ -6,12 +6,31 @@ steps are short and you should see what lands where.
 ```
 config/
 ├─ claude/
-│  ├─ settings.json            → ~/.claude/settings.json
-│  └─ statusline-command.ps1   → ~/.claude/statusline-command.ps1
+│  ├─ settings.json            → ~/.claude/settings.json      (Windows)
+│  ├─ settings.linux.json      → ~/.claude/settings.json      (Linux / macOS)
+│  ├─ statusline-command.ps1   → ~/.claude/                   (Windows)
+│  └─ statusline-command.sh    → ~/.claude/                   (Linux / macOS)
 └─ windows-terminal/
    ├─ gruvbox-dark.json        → schemes[] in Windows Terminal settings.json
    └─ profile-defaults.json    → profiles.defaults in the same file
 ```
+
+Pick one settings file and one statusline script per platform — never mix. The Linux settings
+file is a complete replacement, not a patch. See [`../CLAUDE.md`](../CLAUDE.md) for the full
+migration checklist.
+
+### Linux dependencies
+
+```bash
+sudo pacman -S jq noto-fonts-cjk      # Arch / EndeavourOS
+```
+
+`jq` parses stdin JSON in the bash statusline and both hooks. `noto-fonts-cjk` matters more
+than it looks: the kaomoji are **CJK and Hangul, not emoji** — `눈_눈` is Korean, `｀・ω・´`
+is fullwidth Japanese. Arch ships no CJK font, so without it the script runs correctly and
+prints `□□_□□`. Check the font before debugging the script.
+
+Windows needs neither — PowerShell is built in, Segoe UI covers CJK.
 
 ---
 
@@ -99,10 +118,11 @@ Fonts are deliberately not pinned. Set `font.face` per machine.
 
 This repo is public. `settings.json` here is scrubbed, not a raw copy:
 
-- 24 of 101 `permissions.allow` entries dropped — anything containing absolute user paths,
-  client project names, third-party repos, or localhost service endpoints.
-- The remaining 77 are generic patterns (`Bash(git add *)`, `PowerShell(Get-Process *)`) and
-  are safe to restore as-is.
+- 57 of 101 `permissions.allow` entries dropped — absolute user paths, client project
+  names, third-party repos, localhost endpoints, and every wildcard permitting arbitrary code
+  execution. See the allowlist policy in [`../CLAUDE.md`](../CLAUDE.md).
+- The remaining 44 (Windows) / 27 (Linux) are read-only or non-executing and safe to restore
+  as-is.
 - `OBSIDIAN_VAULT` and the statusline path replaced with `C:\Users\you` placeholders.
 
 Kept in full because they contain nothing personal: `hooks`, `spinnerVerbs` (58 kaomoji

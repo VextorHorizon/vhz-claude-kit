@@ -165,8 +165,8 @@ This repo is public. `config/claude/settings.json` is a filtered copy, not a raw
 
 | | |
 |---|---|
-| **Dropped** | 24 of 101 `permissions.allow` entries — anything containing absolute user paths, client project names, third-party repos, or localhost service endpoints |
-| **Kept** | The other 77. All generic patterns like `Bash(git add *)`, so a restore doesn't re-prompt you a hundred times |
+| **Dropped** | 57 of 101 `permissions.allow` entries — absolute user paths, client project names, third-party repos, localhost endpoints, and every wildcard that permits arbitrary code execution (`node *`, `npm run *`, `git clone *`, `gh api *`, …) |
+| **Kept** | 44 on Windows, 27 on Linux. Read-only or non-executing patterns like `Bash(git add *)` and `PowerShell(Get-Content *)` |
 | **Placeholdered** | `OBSIDIAN_VAULT` and the statusline path → `C:\Users\you`. **Both need editing on restore** — Claude Code does not expand `$env:` inside a `-File` argument |
 | **Untouched** | `hooks`, `spinnerVerbs` (58 kaomoji), `enabledPlugins`, `extraKnownMarketplaces`, `model`, `effortLevel`, `tui` — nothing personal in them |
 
