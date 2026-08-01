@@ -6,12 +6,31 @@ steps are short and you should see what lands where.
 ```
 config/
 ├─ claude/
-│  ├─ settings.json            → ~/.claude/settings.json
-│  └─ statusline-command.ps1   → ~/.claude/statusline-command.ps1
+│  ├─ settings.json            → ~/.claude/settings.json      (Windows)
+│  ├─ settings.linux.json      → ~/.claude/settings.json      (Linux / macOS)
+│  ├─ statusline-command.ps1   → ~/.claude/                   (Windows)
+│  └─ statusline-command.sh    → ~/.claude/                   (Linux / macOS)
 └─ windows-terminal/
    ├─ gruvbox-dark.json        → schemes[] in Windows Terminal settings.json
    └─ profile-defaults.json    → profiles.defaults in the same file
 ```
+
+Pick one settings file and one statusline script per platform — never mix. The Linux settings
+file is a complete replacement, not a patch. See [`../CLAUDE.md`](../CLAUDE.md) for the full
+migration checklist.
+
+### Linux dependencies
+
+```bash
+sudo pacman -S jq noto-fonts-cjk      # Arch / EndeavourOS
+```
+
+`jq` parses stdin JSON in the bash statusline and both hooks. `noto-fonts-cjk` matters more
+than it looks: the kaomoji are **CJK and Hangul, not emoji** — `눈_눈` is Korean, `｀・ω・´`
+is fullwidth Japanese. Arch ships no CJK font, so without it the script runs correctly and
+prints `□□_□□`. Check the font before debugging the script.
+
+Windows needs neither — PowerShell is built in, Segoe UI covers CJK.
 
 ---
 
