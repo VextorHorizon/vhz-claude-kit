@@ -72,6 +72,31 @@ whatever the machine uses. The palette is portable, the file is not.
 Keep `"theme": "dark-ansi"` in settings either way. It makes Claude Code emit ANSI colour
 slots instead of hardcoded hex, so the terminal scheme drives everything.
 
+## Permission allowlist policy
+
+`permissions.allow` in both settings files is deliberately conservative. Never re-add an entry
+whose wildcard lets a second command run. A trailing `*` on any of these is arbitrary code
+execution, not a convenience:
+
+| Never allowlist | Why |
+|---|---|
+| `node *`, `python *`, `sh *`, `pwsh *` | `-e` / `-c` runs anything |
+| `npm *`, `npm run *`, `npm install *` | scripts and postinstall hooks |
+| `git clone *`, `git fetch *`, `git push *` | `--upload-pack` / `--receive-pack` take a command |
+| `git rebase *` | `--exec` takes a command |
+| `git config *` | sets `core.pager` to a command that fires on the next git call |
+| `gh api *`, `gh auth *`, `gh repo *` | full write access to the account, including repo deletion |
+| `Remove-Item *`, `New-Item *`, `start *` | arbitrary filesystem writes and process launches |
+
+Safe wildcards are read-only (`Get-Content *`, `Test-Path *`) or git subcommands that take no
+command-valued flag (`git add *`, `git branch *`, `git ls-tree *`).
+
+Audit before committing:
+
+```bash
+python -c "import json,io;[print(a) for p in ['config/claude/settings.json','config/claude/settings.linux.json'] for a in json.load(io.open(p,encoding='utf-8'))['permissions']['allow'] if a.rstrip(')').endswith('*')]"
+```
+
 ## Before committing anything to this repo
 
 Public repo. Never commit absolute user paths, client or employer project names, third-party

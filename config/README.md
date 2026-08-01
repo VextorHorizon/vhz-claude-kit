@@ -118,10 +118,11 @@ Fonts are deliberately not pinned. Set `font.face` per machine.
 
 This repo is public. `settings.json` here is scrubbed, not a raw copy:
 
-- 24 of 101 `permissions.allow` entries dropped — anything containing absolute user paths,
-  client project names, third-party repos, or localhost service endpoints.
-- The remaining 77 are generic patterns (`Bash(git add *)`, `PowerShell(Get-Process *)`) and
-  are safe to restore as-is.
+- 57 of 101 `permissions.allow` entries dropped — absolute user paths, client project
+  names, third-party repos, localhost endpoints, and every wildcard permitting arbitrary code
+  execution. See the allowlist policy in [`../CLAUDE.md`](../CLAUDE.md).
+- The remaining 44 (Windows) / 27 (Linux) are read-only or non-executing and safe to restore
+  as-is.
 - `OBSIDIAN_VAULT` and the statusline path replaced with `C:\Users\you` placeholders.
 
 Kept in full because they contain nothing personal: `hooks`, `spinnerVerbs` (58 kaomoji
