@@ -1,6 +1,6 @@
 # vhz-claude-skills
 
-Personal Claude Code skill plugin — Obsidian second brain workflows backed up here.
+Personal Claude Code kit — Obsidian second brain skills, subagents, and machine config backed up here.
 
 ## Skills
 
@@ -18,6 +18,20 @@ Agents live in the `agents/` folder and are auto-loaded by Claude Code at sessio
 | Agent | Model | What it does |
 |---|---|---|
 | `implementer` | Sonnet | Implements an already-agreed plan (coding/implementation work). Pinned to Sonnet so the main session can stay on a stronger model and delegate execution. |
+
+## Config
+
+Machine setup lives in `config/` — not loaded by the plugin, restored by hand. See
+[`config/README.md`](config/README.md).
+
+| What | Where it goes |
+|---|---|
+| Kaomoji statusline (script + `statusLine` + `hooks`) | `~/.claude/` |
+| `spinnerVerbs`, `theme: dark-ansi`, model and TUI prefs | `~/.claude/settings.json` |
+| Gruvbox Dark scheme + terminal profile defaults | Windows Terminal `settings.json` |
+
+`settings.json` here is scrubbed — user paths and project-specific permissions removed. Two
+placeholder paths need editing on restore.
 
 ## Setup
 

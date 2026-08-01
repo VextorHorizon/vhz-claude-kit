@@ -1,0 +1,9 @@
+{
+  "colorScheme": "Gruvbox Dark",
+  "opacity": 92,
+  "useAcrylic": true,
+  "padding": "16",
+  "cursorShape": "filledBox",
+  "scrollbarState": "hidden",
+  "antialiasingMode": "grayscale"
+}
