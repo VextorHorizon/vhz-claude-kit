@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Code — Make It Not Hurt</title>
+<style>
+/* ─────────────────────────────────────────────────────────────
+   PAGE SHELL
+   ───────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--page-bg);
+  color: var(--page-fg);
+  font-family: ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+:root {
+  --page-bg: #0d0d10;
+  --page-fg: #d8d8de;
+  --page-dim: #8b8b96;
+  --page-faint: #5a5a64;
+  --card: #16161b;
+  --card-2: #1c1c22;
+  --line: #2a2a32;
+  --accent: #d97757;
+  --accent-soft: rgba(217, 119, 87, .14);
+  --good: #6bbf7b;
+  --warn: #d9b45a;
+  --mono: "Cascadia Mono", "Consolas", ui-monospace, monospace;
+  --radius: 12px;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --page-bg: #faf9f7;
+    --page-fg: #1f1f24;
+    --page-dim: #61616b;
+    --page-faint: #91919c;
+    --card: #ffffff;
+    --card-2: #f2f1ee;
+    --line: #e2e0dc;
+    --accent: #c0562f;
+    --accent-soft: rgba(192, 86, 47, .09);
+    --good: #3d8a4d;
+    --warn: #a07c1c;
+  }
+}
+
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px 120px; }
+
+/* ── Type ── */
+h1 {
+  font-size: clamp(2rem, 5.5vw, 3.4rem);
+  line-height: 1.05;
+  letter-spacing: -.035em;
+  font-weight: 640;
+  margin: 0 0 .5rem;
+}
+h2 {
+  font-size: clamp(1.35rem, 3vw, 1.9rem);
+  letter-spacing: -.025em;
+  font-weight: 620;
+  margin: 0 0 .35rem;
+  line-height: 1.15;
+}
+h3 { font-size: 1.02rem; font-weight: 620; letter-spacing: -.01em; margin: 0 0 .4rem; }
+p  { margin: 0 0 1rem; max-width: 68ch; }
+.dim { color: var(--page-dim); }
+.faint { color: var(--page-faint); }
+.small { font-size: .875rem; }
+.tiny { font-size: .78rem; }
+code {
+  font-family: var(--mono);
+  font-size: .88em;
+  background: var(--card-2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: .1em .38em;
+}
+
+/* ── Header ── */
+header { padding: 72px 0 40px; border-bottom: 1px solid var(--line); margin-bottom: 56px; }
+.eyebrow {
+  font-family: var(--mono);
+  font-size: .72rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 1.1rem;
+}
+.lede { font-size: 1.12rem; color: var(--page-dim); max-width: 60ch; }
+
+/* ── Current-setup strip ── */
+.now {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 2.5rem;
+}
+.now div { background: var(--card); padding: 14px 16px; }
+.now dt {
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--page-faint);
+  margin-bottom: 5px;
+}
+.now dd { margin: 0; font-family: var(--mono); font-size: .86rem; }
+.bad { color: #e0685f; }
+
+/* ── Sections ── */
+section { margin-bottom: 84px; scroll-margin-top: 24px; }
+.sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 1.6rem; flex-wrap: wrap; }
+.num {
+  font-family: var(--mono);
+  font-size: .72rem;
+  letter-spacing: .1em;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+  padding: 4px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex: none;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TERMINAL MOCK
+   ───────────────────────────────────────────────────────────── */
+.desk {
+  border-radius: var(--radius);
+  padding: 34px;
+  background:
+    radial-gradient(900px 500px at 12% 8%,  #3d3a6b 0%, transparent 62%),
+    radial-gradient(700px 460px at 88% 92%, #6b3a52 0%, transparent 58%),
+    radial-gradient(600px 400px at 60% 30%, #2a5a66 0%, transparent 60%),
+    linear-gradient(150deg, #14131f, #221b26);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.desk.plain { background: var(--card-2); }
+
+.term {
+  --pad: 16px;
+  --alpha: .92;
+  --tfont: "Cascadia Mono", Consolas, monospace;
+  --tsize: 13px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px -12px rgba(0,0,0,.72), 0 0 0 1px rgba(255,255,255,.07);
+  font-family: var(--tfont);
+  font-size: var(--tsize);
+  line-height: 1.52;
+  transition: none;
+}
+.term-bar {
+  background: rgba(0,0,0,.30);
+  backdrop-filter: blur(20px);
+  padding: 7px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+}
+.term-bar .tab {
+  font-size: 11px;
+  color: rgba(255,255,255,.62);
+  font-family: var(--tfont);
+  background: rgba(255,255,255,.07);
+  padding: 3px 11px;
+  border-radius: 5px;
+}
+.term-bar .sp { flex: 1; }
+.term-bar .btn { width: 11px; height: 11px; border-radius: 50%; opacity: .5; background: rgba(255,255,255,.5); }
+
+.term-body {
+  background: rgba(var(--bg-rgb), var(--alpha));
+  backdrop-filter: blur(calc((1 - var(--alpha)) * 90px)) saturate(1.5);
+  color: rgb(var(--fg-rgb));
+  padding: var(--pad);
+  min-height: 430px;
+  overflow-x: auto;
+  white-space: pre;
+  tab-size: 2;
+}
+/* semantic ANSI slots */
+.c-dim  { color: rgb(var(--dim-rgb)); }
+.c-acc  { color: rgb(var(--acc-rgb)); }
+.c-grn  { color: rgb(var(--grn-rgb)); }
+.c-red  { color: rgb(var(--red-rgb)); }
+.c-yel  { color: rgb(var(--yel-rgb)); }
+.c-blu  { color: rgb(var(--blu-rgb)); }
+.c-mag  { color: rgb(var(--mag-rgb)); }
+.c-cyn  { color: rgb(var(--cyn-rgb)); }
+.c-fg   { color: rgb(var(--fg-rgb)); }
+.b { font-weight: 700; }
+.addln { background: color-mix(in srgb, rgb(var(--grn-rgb)) 15%, transparent); display: inline-block; width: 100%; }
+.delln { background: color-mix(in srgb, rgb(var(--red-rgb)) 15%, transparent); display: inline-block; width: 100%; }
+
+/* ── theme palettes ── */
+.t-campbell   { --bg-rgb:12,12,12;     --fg-rgb:204,204,204; --dim-rgb:118,118,118; --acc-rgb:242,242,242; --grn-rgb:22,198,12;   --red-rgb:231,72,86;   --yel-rgb:249,241,165; --blu-rgb:59,120,255;  --mag-rgb:180,0,158;   --cyn-rgb:97,214,214; }
+.t-mocha      { --bg-rgb:30,30,46;     --fg-rgb:205,214,244; --dim-rgb:108,112,134; --acc-rgb:203,166,247; --grn-rgb:166,227,161; --red-rgb:243,139,168; --yel-rgb:249,226,175; --blu-rgb:137,180,250; --mag-rgb:245,194,231; --cyn-rgb:148,226,213; }
+.t-tokyo      { --bg-rgb:26,27,38;     --fg-rgb:192,202,245; --dim-rgb:86,95,137;   --acc-rgb:187,154,247; --grn-rgb:158,206,106; --red-rgb:247,118,142; --yel-rgb:224,175,104; --blu-rgb:122,162,247; --mag-rgb:187,154,247; --cyn-rgb:125,207,255; }
+.t-rose       { --bg-rgb:25,23,36;     --fg-rgb:224,222,244; --dim-rgb:110,106,134; --acc-rgb:196,167,231; --grn-rgb:156,207,216; --red-rgb:235,111,146; --yel-rgb:246,193,119; --blu-rgb:49,116,143;  --mag-rgb:196,167,231; --cyn-rgb:156,207,216; }
+.t-gruvbox    { --bg-rgb:40,40,40;     --fg-rgb:235,219,178; --dim-rgb:146,131,116; --acc-rgb:211,134,155; --grn-rgb:184,187,38;  --red-rgb:251,73,52;   --yel-rgb:250,189,47;  --blu-rgb:131,165,152; --mag-rgb:211,134,155; --cyn-rgb:142,192,124; }
+.t-onehalf    { --bg-rgb:40,44,52;     --fg-rgb:220,223,228; --dim-rgb:92,99,112;   --acc-rgb:198,120,221; --grn-rgb:152,195,121; --red-rgb:224,108,117; --yel-rgb:229,192,123; --blu-rgb:97,175,239;  --mag-rgb:198,120,221; --cyn-rgb:86,182,194; }
+.t-nord       { --bg-rgb:46,52,64;     --fg-rgb:216,222,233; --dim-rgb:97,110,136;  --acc-rgb:180,142,173; --grn-rgb:163,190,140; --red-rgb:191,97,106;  --yel-rgb:235,203,139; --blu-rgb:129,161,193; --mag-rgb:180,142,173; --cyn-rgb:136,192,208; }
+.t-latte      { --bg-rgb:239,241,245;  --fg-rgb:76,79,105;   --dim-rgb:156,160,176; --acc-rgb:136,57,239;  --grn-rgb:64,160,43;   --red-rgb:210,15,57;   --yel-rgb:223,142,29;  --blu-rgb:30,102,245;  --mag-rgb:234,118,203; --cyn-rgb:23,146,153; }
+
+/* ── control panel ── */
+.panel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 18px 26px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  margin-bottom: 20px;
+}
+.ctl label {
+  display: block;
+  font-family: var(--mono);
+  font-size: .68rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--page-faint);
+  margin-bottom: 7px;
+}
+.ctl select {
+  width: 100%;
+  background: var(--card-2);
+  color: var(--page-fg);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-family: var(--mono);
+  font-size: .84rem;
+}
+.ctl input[type=range] { width: 100%; accent-color: var(--accent); }
+.val { font-family: var(--mono); font-size: .8rem; color: var(--accent); float: right; letter-spacing: 0; text-transform: none; }
+.toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+.tog {
+  font-family: var(--mono);
+  font-size: .76rem;
+  padding: 7px 12px;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--card-2);
+  color: var(--page-dim);
+  cursor: pointer;
+  user-select: none;
+}
+.tog[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
+}
+
+/* ── theme grid ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.swatch {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--card);
+  cursor: pointer;
+  transition: border-color .14s, transform .14s;
+}
+.swatch:hover { border-color: color-mix(in srgb, var(--accent) 55%, transparent); transform: translateY(-2px); }
+.swatch .mini {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 1.5;
+  padding: 12px 13px;
+  white-space: pre;
+  overflow: hidden;
+  background: rgb(var(--bg-rgb));
+  color: rgb(var(--fg-rgb));
+  height: 132px;
+}
+.swatch .meta {
+  padding: 10px 13px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.swatch .meta strong { font-size: .84rem; font-weight: 600; }
+.dots { display: flex; gap: 4px; flex: none; }
+.dots i { width: 9px; height: 9px; border-radius: 50%; display: block; }
+
+/* ── generic compare cards ── */
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.card-h {
+  padding: 11px 15px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: .84rem;
+}
+.tag {
+  font-family: var(--mono);
+  font-size: .66rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.tag.no  { background: rgba(224,104,95,.14);  color: #e0685f; border: 1px solid rgba(224,104,95,.3); }
+.tag.yes { background: rgba(107,191,123,.13); color: var(--good); border: 1px solid rgba(107,191,123,.3); }
+.card-b {
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre;
+  overflow-x: auto;
+  padding: 14px;
+  background: rgb(var(--bg-rgb));
+  color: rgb(var(--fg-rgb));
+}
+.card-note { padding: 12px 15px; border-top: 1px solid var(--line); font-size: .82rem; color: var(--page-dim); white-space: normal; }
+
+/* ── code block ── */
+.codeblk { position: relative; }
+pre {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: .82rem;
+  line-height: 1.62;
+  margin: 0;
+}
+pre .k { color: var(--accent); }
+pre .s { color: var(--good); }
+pre .n { color: #7ba7d9; }
+pre .c { color: var(--page-faint); font-style: italic; }
+.copy {
+  position: absolute; top: 10px; right: 10px;
+  font-family: var(--mono); font-size: .7rem;
+  background: var(--card-2); color: var(--page-dim);
+  border: 1px solid var(--line); border-radius: 6px;
+  padding: 5px 10px; cursor: pointer;
+}
+.copy:hover { color: var(--accent); border-color: var(--accent); }
+
+/* ── table ── */
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: .88rem; }
+th, td { text-align: left; padding: 12px 15px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--mono); font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--page-faint); background: var(--card-2); }
+tr:last-child td { border-bottom: none; }
+td code { background: none; border: none; padding: 0; color: var(--accent); }
+
+/* ── steps ── */
+.steps { list-style: none; padding: 0; margin: 0; counter-reset: s; }
+.steps li {
+  counter-increment: s;
+  position: relative;
+  padding: 0 0 22px 46px;
+  border-left: 1px solid var(--line);
+  margin-left: 13px;
+}
+.steps li:last-child { border-left-color: transparent; padding-bottom: 0; }
+.steps li::before {
+  counter: s;
+  content: counter(s);
+  position: absolute; left: -13px; top: -2px;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--card); border: 1px solid var(--line);
+  color: var(--accent);
+  font-family: var(--mono); font-size: .74rem;
+  display: grid; place-items: center;
+}
+.steps strong { display: block; margin-bottom: 2px; }
+
+.callout {
+  border-left: 2px solid var(--accent);
+  background: var(--accent-soft);
+  padding: 13px 17px;
+  border-radius: 0 8px 8px 0;
+  font-size: .88rem;
+  margin: 18px 0;
+}
+.callout p:last-child { margin-bottom: 0; }
+
+footer { border-top: 1px solid var(--line); padding-top: 28px; color: var(--page-faint); font-size: .82rem; }
+a { color: var(--accent); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+a:hover { border-bottom-color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">Terminal · Windows 11 · PowerShell</p>
+  <h1>Make Claude Code<br>not hurt to look at.</h1>
+  <p class="lede">Everything below is a real, reversible setting. The big win isn't Claude Code — it's Windows Terminal, which on your machine is completely unconfigured.</p>
+
+  <dl class="now">
+    <div><dt>Color scheme</dt><dd class="bad">Campbell (stock)</dd></div>
+    <div><dt>Font</dt><dd>Ubuntu Mono</dd></div>
+    <div><dt>Padding</dt><dd class="bad">0 px</dd></div>
+    <div><dt>Opacity</dt><dd class="bad">100 % opaque</dd></div>
+    <div><dt>Statusline</dt><dd style="color:var(--good)">custom ✓</dd></div>
+  </dl>
+</header>
+
+<!-- ══════════════════ LEVER 1 ══════════════════ -->
+<section>
+  <div class="sec-head"><span class="num">LEVER 01</span><h2>Leave the terminal</h2></div>
+  <p>Zero config, biggest change. Claude Code also ships as a <strong>Windows desktop app</strong>, a <strong>VS Code / JetBrains extension</strong>, and a <strong>web app</strong> at claude.ai/code. Real scrollback, collapsible tool blocks, no black void.</p>
+  <div class="callout"><p>If it's the <em>terminal</em> hurting your eye and not the colors — stop here. The rest of this page is for people who want to stay in the terminal.</p></div>
+</section>
+
+<!-- ══════════════════ LEVER 2 — LIVE ══════════════════ -->
+<section>
+  <div class="sec-head"><span class="num">LEVER 02</span><h2>Theme Windows Terminal</h2></div>
+  <p class="dim">Drag the sliders. This is the same Claude Code session rendered under different terminal settings — the only thing changing is your terminal config, not Claude Code.</p>
+
+  <div class="panel">
+    <div class="ctl">
+      <label for="theme">Color scheme</label>
+      <select id="theme">
+        <option value="t-campbell">Campbell — your current (stock)</option>
+        <option value="t-mocha" selected>Catppuccin Mocha</option>
+        <option value="t-tokyo">Tokyo Night</option>
+        <option value="t-rose">Rosé Pine</option>
+        <option value="t-gruvbox">Gruvbox Dark</option>
+        <option value="t-onehalf">One Half Dark (built into WT)</option>
+        <option value="t-nord">Nord</option>
+        <option value="t-latte">Catppuccin Latte — light</option>
+      </select>
+    </div>
+    <div class="ctl">
+      <label for="font">Font face <span class="val" id="fontNote"></span></label>
+      <select id="font">
+        <option value='"Ubuntu Mono", Consolas, monospace'>Ubuntu Mono — your current</option>
+        <option value='"Cascadia Mono", Consolas, monospace' selected>Cascadia Mono — ships with WT</option>
+        <option value='"Cascadia Code", Consolas, monospace'>Cascadia Code — has ligatures</option>
+        <option value='Consolas, monospace'>Consolas</option>
+        <option value='"JetBrains Mono", "JetBrainsMono Nerd Font", Consolas, monospace'>JetBrains Mono — install first</option>
+      </select>
+    </div>
+    <div class="ctl">
+      <label for="pad">Padding <span class="val" id="padV">16 px</span></label>
+      <input type="range" id="pad" min="0" max="40" step="2" value="16">
+    </div>
+    <div class="ctl">
+      <label for="op">Opacity <span class="val" id="opV">92 %</span></label>
+      <input type="range" id="op" min="55" max="100" step="1" value="92">
+    </div>
+    <div class="ctl">
+      <label for="size">Font size <span class="val" id="sizeV">13 px</span></label>
+      <input type="range" id="size" min="10" max="19" step="1" value="13">
+    </div>
+    <div class="ctl">
+      <label>Quick presets</label>
+      <div class="toggles">
+        <button class="tog" id="pYours">your setup</button>
+        <button class="tog" id="pNice" aria-pressed="true">recommended</button>
+        <button class="tog" id="pWall">show wallpaper</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="desk" id="desk">
+    <div class="term t-mocha" id="term">
+      <div class="term-bar">
+        <span class="btn"></span><span class="btn"></span><span class="btn"></span>
+        <span class="tab">PowerShell — claude</span>
+        <span class="sp"></span>
+      </div>
+      <div class="term-body" id="body"><span class="c-acc b">✻</span> <span class="c-fg b">Welcome to Claude Code</span>
+<span class="c-dim">  cwd: C:\Users\you\my-project</span>
+
+<span class="c-dim">&gt;</span> <span class="c-fg">add rate limiting to the login route</span>
+
+<span class="c-acc">⏺</span> <span class="c-fg">I'll add rate limiting to the login endpoint. Reading the route first.</span>
+
+<span class="c-acc">⏺</span> <span class="c-fg b">Read</span><span class="c-dim">(</span><span class="c-cyn">apps/api/src/auth/auth.controller.ts</span><span class="c-dim">)</span>
+<span class="c-dim">  ⎿  Read 84 lines</span>
+
+<span class="c-acc">⏺</span> <span class="c-fg b">Update</span><span class="c-dim">(</span><span class="c-cyn">apps/api/src/auth/auth.controller.ts</span><span class="c-dim">)</span>
+<span class="c-dim">  ⎿  Updated with 7 additions and 1 removal</span>
+<span class="c-dim">       10</span> <span class="addln"><span class="c-grn">  + import { Throttle } from '@nestjs/throttler'</span></span>
+<span class="c-dim">       11</span>
+<span class="c-dim">       24</span> <span class="delln"><span class="c-red">  - @Post('login')</span></span>
+<span class="c-dim">       24</span> <span class="addln"><span class="c-grn">  + @Throttle({ default: { limit: 5, ttl: 60000 } })</span></span>
+<span class="c-dim">       25</span> <span class="addln"><span class="c-grn">  + @Post('login')</span></span>
+
+<span class="c-acc">⏺</span> <span class="c-fg b">Bash</span><span class="c-dim">(</span><span class="c-cyn">pnpm test auth</span><span class="c-dim">)</span>
+<span class="c-dim">  ⎿  </span><span class="c-grn">✓ 14 passed</span><span class="c-dim">  ·  </span><span class="c-red">✗ 0 failed</span><span class="c-dim">  ·  2.4s</span>
+
+<span class="c-acc">⏺</span> <span class="c-fg">Rate limit live: 5 attempts / 60s per IP on </span><span class="c-yel">POST /auth/login</span><span class="c-fg">.</span>
+
+<span class="c-mag">✻ Cogitating…</span> <span class="c-dim">(4s · ↑ 1.2k tokens · esc to interrupt)</span>
+
+<span class="c-dim">╭──────────────────────────────────────────────────────────╮</span>
+<span class="c-dim">│</span> <span class="c-acc">&gt;</span> <span class="c-dim">                                                       │</span>
+<span class="c-dim">╰──────────────────────────────────────────────────────────╯</span>
+<span class="c-mag">  (✿◠‿◠) editing</span><span class="c-dim"> | </span><span class="c-blu">Opus 5</span><span class="c-dim"> | </span><span class="c-grn">5h 34%</span><span class="c-dim"> | </span><span class="c-yel">main ✓</span></div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <p><strong>Padding is the sleeper.</strong> Drag it to 0 and back. Stock Windows Terminal jams glyphs against the window edge — that alone is a big part of what reads as “wall of text.”</p>
+  </div>
+</section>
+
+<!-- ══════════════════ THEME GRID ══════════════════ -->
+<section>
+  <div class="sec-head"><span class="num">GALLERY</span><h2>All eight, side by side</h2></div>
+  <p class="dim small">Click any card to load it into the live preview above.</p>
+  <div class="grid" id="grid"></div>
+</section>
+
+<!-- ══════════════════ LEVER 3 ══════════════════ -->
+<section>
+  <div class="sec-head"><span class="num">LEVER 03</span><h2><code>/config</code> → theme</h2></div>
+  <p>Claude Code has its own theme setting, separate from the terminal. The key choice is <strong>hardcoded vs. ANSI</strong>.</p>
+
+  <div class="two">
+    <div class="card">
+      <div class="card-h"><strong>theme: <code>dark</code></strong><span class="tag no">ignores your scheme</span></div>
+      <div class="card-b t-mocha"><span style="color:#22c55e">⏺</span> <span style="color:#e5e5e5">Update(auth.controller.ts)</span>
+<span style="color:#888">  ⎿  Updated with 7 additions</span>
+<span style="background:rgba(34,197,94,.15);display:inline-block;width:100%"><span style="color:#22c55e">  + @Throttle({ limit: 5 })</span></span>
+<span style="background:rgba(239,68,68,.15);display:inline-block;width:100%"><span style="color:#ef4444">  - @Post('login')</span></span>
+
+<span style="color:#e5e5e5">Your beautiful Catppuccin palette
+sits underneath, unused. Claude Code
+paints its own greens and reds on top.</span></div>
+      <div class="card-note">Claude Code ships fixed hex values. Consistent everywhere, but clashes with whatever scheme you picked.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><strong>theme: <code>dark-ansi</code></strong><span class="tag yes">defers to terminal</span></div>
+      <div class="card-b t-mocha"><span class="c-acc">⏺</span> <span class="c-fg">Update(auth.controller.ts)</span>
+<span class="c-dim">  ⎿  Updated with 7 additions</span>
+<span class="addln"><span class="c-grn">  + @Throttle({ limit: 5 })</span></span>
+<span class="delln"><span class="c-red">  - @Post('login')</span></span>
+
+<span class="c-fg">Claude Code emits ANSI slots 1–15.
+Your scheme fills them. One palette,
+whole terminal. Nothing clashes.</span></div>
+      <div class="card-note">Pick this <em>after</em> Lever 02. Change scheme later and Claude Code follows automatically — no reconfiguring.</div>
+    </div>
+  </div>
+
+  <p class="small dim" style="margin-top:18px">Full list in <code>/config</code>: <code>dark</code> · <code>light</code> · <code>dark-ansi</code> · <code>light-ansi</code> · <code>dark-daltonized</code> · <code>light-daltonized</code>. The daltonized pair swaps red/green for blue/orange — worth trying regardless of color vision, red-on-black is the harshest pairing on the list.</p>
+</section>
+
+<!-- ══════════════════ LEVER 4 — tweakcc ══════════════════ -->
+<section>
+  <div class="sec-head"><span class="num">LEVER 04</span><h2>tweakcc <span class="faint" style="font-weight:400;font-size:.6em">Piebald-AI/tweakcc · 2.4k ★</span></h2></div>
+  <p>The repo you were asking about. It patches the installed Claude Code CLI directly — custom themes with an HSL color picker, custom spinners, 200+ thinking verbs, regex input highlighters, and it can strip the ASCII box around the prompt.</p>
+
+  <div class="two">
+    <div class="card">
+      <div class="card-h"><strong>Stock</strong><span class="tag no">ASCII box + gray user text</span></div>
+      <div class="card-b t-mocha"><span class="c-mag">✻ Cogitating…</span> <span class="c-dim">(4s · esc to interrupt)</span>
+
+<span class="c-dim">╭────────────────────────────────────╮</span>
+<span class="c-dim">│</span> <span class="c-acc">&gt;</span> <span class="c-dim">fix the login bug             │</span>
+<span class="c-dim">╰────────────────────────────────────╯</span>
+
+<span class="c-dim">&gt; earlier message, unreadable gray</span>
+<span class="c-dim">&gt; another one, same flat gray</span></div>
+      <div class="card-note">Box eats 3 lines of vertical space. Your own messages render dim gray — hard to find when scrolling back.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><strong>tweakcc'd</strong><span class="tag yes">borderless + colored</span></div>
+      <div class="card-b t-mocha"><span class="c-cyn">⠹ Percolating…</span> <span class="c-dim">(4s · esc to interrupt)</span>
+
+<span class="c-acc b">❯</span> <span class="c-fg">fix the login bug</span>
+
+
+<span class="c-blu b">❯</span> <span class="c-fg">earlier message, easy to spot</span>
+<span class="c-blu b">❯</span> <span class="c-fg">another one, scannable</span></div>
+      <div class="card-note">Border removed, custom spinner + verb, user messages recolored. Denser and easier to scan back through.</div>
+    </div>
+  </div>
+
+  <div class="codeblk" style="margin-top:20px">
+    <button class="copy" data-c="npx tweakcc">copy</button>
+    <pre><span class="c">// interactive TUI — pick colors, verbs, spinner</span>
+<span class="k">npx</span> tweakcc
+
+<span class="c">// after every Claude Code update, reapply:</span>
+<span class="k">npx</span> tweakcc <span class="n">--apply</span></pre>
+  </div>
+
+  <div class="callout">
+    <p><strong>Tradeoff, stated plainly.</strong> tweakcc rewrites Claude Code's bundled <code>cli.js</code> in place. Every Claude Code update overwrites the patch. Your settings survive in <code>~/.tweakcc/config.json</code>, but you must re-run <code>--apply</code>. If Claude Code ever behaves strangely after a version bump, unpatch before filing a bug.</p>
+  </div>
+</section>
+
+<!-- ══════════════════ LEVER 5 ══════════════════ -->
+<section>
+  <div class="sec-head"><span class="num">LEVER 05</span><h2>Statusline — you already have one</h2></div>
+  <p>Your <code>~/.claude/statusline-command.ps1</code> maps tools to kaomoji. Shown here against the alternative, so you can decide whether swapping is worth it.</p>
+
+  <div class="two">
+    <div class="card">
+      <div class="card-h"><strong>Yours — kaomoji</strong><span class="tag yes">already working</span></div>
+      <div class="card-b t-mocha"><span class="c-mag">(✿◠‿◠) editing</span><span class="c-dim"> | </span><span class="c-blu">Opus 5</span><span class="c-dim"> | </span><span class="c-grn">5h 34%</span>
+<span class="c-mag">(ง'̀-'́)ง cmd</span><span class="c-dim"> | </span><span class="c-blu">Opus 5</span><span class="c-dim"> | </span><span class="c-grn">5h 34%</span>
+<span class="c-mag">눈_눈 grep</span><span class="c-dim"> | </span><span class="c-blu">Opus 5</span><span class="c-dim"> | </span><span class="c-grn">5h 41%</span></div>
+      <div class="card-note">Live tool indicator — genuinely useful, and ccstatusline does not have it. Needs no font install.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-h"><strong>ccstatusline</strong><span class="tag no">needs a Nerd Font</span></div>
+      <div class="card-b t-mocha"><span style="background:rgb(var(--blu-rgb));color:rgb(var(--bg-rgb))"> Opus 5 </span><span style="color:rgb(var(--blu-rgb));background:rgb(var(--mag-rgb))">▶</span><span style="background:rgb(var(--mag-rgb));color:rgb(var(--bg-rgb))"> ⎇ main </span><span style="color:rgb(var(--mag-rgb));background:rgb(var(--grn-rgb))">▶</span><span style="background:rgb(var(--grn-rgb));color:rgb(var(--bg-rgb))"> 34.2k tok </span><span style="color:rgb(var(--grn-rgb))">▶</span>
+<span class="c-dim">└ 2h 14m session · 34% of 5h block</span>
+
+<span class="c-dim">(arrows here are CSS — without a Nerd
+Font installed they render as □ tofu)</span></div>
+      <div class="card-note"><code>npx -y ccstatusline@latest</code> · 12.2k ★ · TUI config, multi-line, token counters, powerline separators.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ THE PATCH ══════════════════ -->
+<section>
+  <div class="sec-head"><span class="num">APPLY</span><h2>The actual config</h2></div>
+  <p class="small dim" style="font-family:var(--mono)">%LOCALAPPDATA%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json</p>
+
+  <div class="codeblk">
+    <button class="copy" data-c='"defaults": {
+  "colorScheme": "Catppuccin Mocha",
+  "font": { "face": "JetBrainsMono Nerd Font", "size": 11, "weight": "normal" },
+  "opacity": 92,
+  "useAcrylic": true,
+  "padding": "16",
+  "cursorShape": "filledBox",
+  "scrollbarState": "hidden",
+  "antialiasingMode": "grayscale"
+}'>copy</button>
+<pre><span class="c">// goes inside "profiles", replacing the empty "defaults": {}</span>
+<span class="n">"defaults"</span>: {
+  <span class="n">"colorScheme"</span>: <span class="s">"Catppuccin Mocha"</span>,   <span class="c">// paste scheme into "schemes": [] first</span>
+  <span class="n">"font"</span>: { <span class="n">"face"</span>: <span class="s">"JetBrainsMono Nerd Font"</span>, <span class="n">"size"</span>: 11, <span class="n">"weight"</span>: <span class="s">"normal"</span> },
+  <span class="n">"opacity"</span>: 92,               <span class="c">// 92 reads best; below 80 hurts contrast</span>
+  <span class="n">"useAcrylic"</span>: true,          <span class="c">// blur behind — needed for opacity to look good</span>
+  <span class="n">"padding"</span>: <span class="s">"16"</span>,             <span class="c">// biggest single readability win</span>
+  <span class="n">"cursorShape"</span>: <span class="s">"filledBox"</span>,
+  <span class="n">"scrollbarState"</span>: <span class="s">"hidden"</span>,  <span class="c">// Claude Code manages its own scroll</span>
+  <span class="n">"antialiasingMode"</span>: <span class="s">"grayscale"</span> <span class="c">// kills color fringing on dark bg</span>
+}</pre>
+  </div>
+
+  <h3 style="margin-top:34px">Order of operations</h3>
+  <ol class="steps">
+    <li><strong>Install JetBrainsMono Nerd Font</strong><span class="dim small">From <code>ryanoasis/nerd-fonts</code> releases → <code>JetBrainsMono.zip</code>. Select all <code>.ttf</code> → right-click → Install for all users. Must be the <em>Nerd Font</em> build, not plain JetBrains Mono, or powerline glyphs stay as tofu.</span></li>
+    <li><strong>Add the color scheme</strong><span class="dim small">Copy the Mocha JSON from <code>catppuccin/windows-terminal</code> into the <code>"schemes": []</code> array — currently empty on your machine.</span></li>
+    <li><strong>Paste the defaults block</strong><span class="dim small">Windows Terminal hot-reloads on save. No restart.</span></li>
+    <li><strong>Set Claude Code to dark-ansi</strong><span class="dim small"><code>/config</code> → Theme → <code>dark-ansi</code>. Now the scheme drives everything.</span></li>
+    <li><strong>Optional: tweakcc</strong><span class="dim small"><code>npx tweakcc</code> — only if you still want the input box border gone.</span></li>
+  </ol>
+</section>
+
+<!-- ══════════════════ REPOS ══════════════════ -->
+<section>
+  <div class="sec-head"><span class="num">REPOS</span><h2>Everything referenced</h2></div>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Repo</th><th>What it gives you</th><th>Cost</th></tr></thead>
+      <tbody>
+        <tr><td><code>Piebald-AI/tweakcc</code><br><span class="tiny faint">2.4k ★</span></td><td>Patches Claude Code itself — custom themes, spinners, thinking verbs, no input border</td><td class="small">Re-run <code>--apply</code> after every CC update</td></tr>
+        <tr><td><code>sirmalloc/ccstatusline</code><br><span class="tiny faint">12.2k ★</span></td><td>Powerline statusline, TUI config, multi-line, token/git/timer segments</td><td class="small">Nerd Font required; you already have a statusline</td></tr>
+        <tr><td><code>catppuccin/windows-terminal</code></td><td>Mocha / Macchiato / Frappé / Latte — softest contrast of the popular schemes</td><td class="small">Copy-paste JSON</td></tr>
+        <tr><td><code>mbadolato/iTerm2-Color-Schemes</code></td><td>300+ schemes with a <code>windowsterminal/</code> folder — Tokyo Night, Rosé Pine, Gruvbox, Nord</td><td class="small">Copy-paste JSON</td></tr>
+        <tr><td><code>ryanoasis/nerd-fonts</code></td><td>Patched fonts with powerline + icon glyphs</td><td class="small">Manual install, needs a click</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════════════════ TEXT VOLUME ══════════════════ -->
+<section>
+  <div class="sec-head"><span class="num">BONUS</span><h2>“A lot of text” is a separate problem</h2></div>
+  <p>Color fixes <em>harsh</em>. It does not fix <em>volume</em>. Three levers for that:</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>Setting</th><th>Now</th><th>Effect</th></tr></thead>
+      <tbody>
+        <tr><td><code>/output-style</code></td><td>Explanatory</td><td>Explanatory adds a teaching block to every answer by design. <code>default</code> removes them.</td></tr>
+        <tr><td><code>/caveman</code></td><td>full</td><td>Already cutting roughly 75%. <code>/caveman ultra</code> goes further.</td></tr>
+        <tr><td><code>/config</code> → verbose</td><td>on</td><td>Off collapses long tool output to a summary line — usually the single biggest source of scroll.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<footer>
+  Live preview approximates Windows Terminal rendering — acrylic blur and font hinting differ slightly on the real thing. Every setting shown is reversible; back up <code>settings.json</code> before editing.
+</footer>
+
+</div>
+
+<script>
+(function () {
+  var THEMES = [
+    ['t-campbell', 'Campbell',          'stock — what you have now',    ['#0c0c0c','#cccccc','#16c60c','#e74856','#3b78ff']],
+    ['t-mocha',    'Catppuccin Mocha',  'softest contrast · recommended',['#1e1e2e','#cdd6f4','#a6e3a1','#f38ba8','#89b4fa']],
+    ['t-tokyo',    'Tokyo Night',       'cool blue, high polish',        ['#1a1b26','#c0caf5','#9ece6a','#f7768e','#7aa2f7']],
+    ['t-rose',     'Rosé Pine',         'muted, warm, low fatigue',      ['#191724','#e0def4','#9ccfd8','#eb6f92','#31748f']],
+    ['t-gruvbox',  'Gruvbox Dark',      'warm retro, heavy contrast',    ['#282828','#ebdbb2','#b8bb26','#fb4934','#83a598']],
+    ['t-onehalf',  'One Half Dark',     'built into WT — zero install',  ['#282c34','#dcdfe4','#98c379','#e06c75','#61afef']],
+    ['t-nord',     'Nord',              'desaturated arctic',            ['#2e3440','#d8dee9','#a3be8c','#bf616a','#81a1c1']],
+    ['t-latte',    'Catppuccin Latte',  'light mode, if black is the issue',['#eff1f5','#4c4f69','#40a02b','#d20f39','#1e66f5']]
+  ];
+
+  var MINI =
+    '<span class="c-acc">\u23FA</span> <span class="c-fg">Update(auth.controller.ts)</span>\n' +
+    '<span class="c-dim">  \u23BF  7 additions, 1 removal</span>\n' +
+    '<span class="addln"><span class="c-grn">  + @Throttle({ limit: 5 })</span></span>\n' +
+    '<span class="delln"><span class="c-red">  - @Post(\'login\')</span></span>\n' +
+    '\n' +
+    '<span class="c-acc">\u23FA</span> <span class="c-fg">Bash(pnpm test)</span>\n' +
+    '<span class="c-dim">  \u23BF  </span><span class="c-grn">\u2713 14 passed</span>\n' +
+    '\n' +
+    '<span class="c-mag">\u273B Cogitating\u2026</span> <span class="c-dim">(4s)</span>';
+
+  var term = document.getElementById('term');
+  var desk = document.getElementById('desk');
+  var sel  = document.getElementById('theme');
+
+  function setTheme(cls) {
+    THEMES.forEach(function (t) { term.classList.remove(t[0]); });
+    term.classList.add(cls);
+    sel.value = cls;
+  }
+
+  // ── build gallery ──
+  var grid = document.getElementById('grid');
+  THEMES.forEach(function (t) {
+    var el = document.createElement('div');
+    el.className = 'swatch ' + t[0];
+    el.setAttribute('role', 'button');
+    el.setAttribute('tabindex', '0');
+    el.innerHTML =
+      '<div class="mini">' + MINI + '</div>' +
+      '<div class="meta"><div><strong>' + t[1] + '</strong><div class="tiny faint">' + t[2] + '</div></div>' +
+      '<div class="dots">' + t[3].map(function (c) {
+        return '<i style="background:' + c + ';box-shadow:0 0 0 1px rgba(128,128,128,.4)"></i>';
+      }).join('') + '</div></div>';
+    function pick() {
+      setTheme(t[0]);
+      document.getElementById('desk').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    el.addEventListener('click', pick);
+    el.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+    grid.appendChild(el);
+  });
+
+  // ── controls ──
+  sel.addEventListener('change', function () { setTheme(sel.value); });
+
+  function bindRange(id, outId, cssVar, unit, fmt) {
+    var r = document.getElementById(id), o = document.getElementById(outId);
+    function upd() {
+      var v = +r.value;
+      term.style.setProperty(cssVar, fmt ? fmt(v) : v + unit);
+      o.textContent = v + ' ' + unit;
+    }
+    r.addEventListener('input', upd);
+    upd();
+    return r;
+  }
+  var padR  = bindRange('pad',  'padV',  '--pad',   'px');
+  var sizeR = bindRange('size', 'sizeV', '--tsize', 'px');
+  var opR   = document.getElementById('op'), opO = document.getElementById('opV');
+  function updOp() {
+    term.style.setProperty('--alpha', (+opR.value / 100).toFixed(2));
+    opO.textContent = opR.value + ' %';
+  }
+  opR.addEventListener('input', updOp); updOp();
+
+  var fontSel = document.getElementById('font'), fontNote = document.getElementById('fontNote');
+  function updFont() {
+    term.style.setProperty('--tfont', fontSel.value);
+    var first = fontSel.value.split(',')[0].replace(/"/g, '').trim();
+    var have = document.fonts && document.fonts.check ? document.fonts.check('12px "' + first + '"') : true;
+    fontNote.textContent = have ? 'installed' : 'not installed \u2192 falling back';
+    fontNote.style.color = have ? 'var(--good)' : '#e0685f';
+  }
+  fontSel.addEventListener('change', updFont);
+  if (document.fonts && document.fonts.ready) { document.fonts.ready.then(updFont); } else { updFont(); }
+
+  // ── presets ──
+  function press(id) {
+    ['pYours', 'pNice'].forEach(function (b) {
+      document.getElementById(b).setAttribute('aria-pressed', String(b === id));
+    });
+  }
+  document.getElementById('pYours').addEventListener('click', function () {
+    setTheme('t-campbell');
+    padR.value = 0;  padR.dispatchEvent(new Event('input'));
+    opR.value = 100; updOp();
+    sizeR.value = 13; sizeR.dispatchEvent(new Event('input'));
+    fontSel.selectedIndex = 0; updFont();
+    press('pYours');
+  });
+  document.getElementById('pNice').addEventListener('click', function () {
+    setTheme('t-mocha');
+    padR.value = 16; padR.dispatchEvent(new Event('input'));
+    opR.value = 92;  updOp();
+    sizeR.value = 13; sizeR.dispatchEvent(new Event('input'));
+    fontSel.selectedIndex = 1; updFont();
+    press('pNice');
+  });
+  var wall = document.getElementById('pWall');
+  wall.setAttribute('aria-pressed', 'true');
+  wall.addEventListener('click', function () {
+    var on = wall.getAttribute('aria-pressed') === 'true';
+    wall.setAttribute('aria-pressed', String(!on));
+    desk.classList.toggle('plain', on);
+  });
+
+  // ── copy buttons ──
+  document.querySelectorAll('.copy').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var txt = b.getAttribute('data-c') || b.parentElement.querySelector('pre').innerText;
+      navigator.clipboard.writeText(txt).then(function () {
+        var old = b.textContent;
+        b.textContent = 'copied ✓';
+        setTimeout(function () { b.textContent = old; }, 1400);
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>
